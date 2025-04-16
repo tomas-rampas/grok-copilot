@@ -1,0 +1,79 @@
+{
+  "name": "grok-copilot",
+  "displayName": "Grok Copilot",
+  "description": "AI-powered coding assistant using Grok",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onCommand:grok-copilot.suggest",
+    "onCommand:grok-copilot.chat",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "grok-copilot.suggest",
+        "title": "Grok Copilot: Suggest Code"
+      },
+      {
+        "command": "grok-copilot.chat",
+        "title": "Grok Copilot: Chat"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "grokCopilot",
+          "title": "Grok Copilot",
+          "icon": "resources/grok-image.svg"
+        }
+      ]
+    },
+    "views": {
+      "grokCopilot": [
+        {
+          "id": "grokChat",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Grok Copilot",
+      "properties": {
+        "grok-copilot.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "xAI API key for Grok"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "compile": "tsc -p ./",
+    "watch-tsc": "tsc -watch -p ./",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "test": "mocha --require ts-node/register ./test/extension.test.ts"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.4",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.25.2",
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "axios": "^1.8.4"
+  }
+}
