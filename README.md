@@ -26,6 +26,7 @@ To use Grok Copilot, you need the following:
 ### Installation
 
 1. Install the extension from the VS Code Marketplace (search for "Grok Copilot").
+( this is also hallucination 😉 )
 2. Alternatively, clone the repository and build it locally:
    ```bash
    git clone https://github.com/your-repo/grok-copilot.git
