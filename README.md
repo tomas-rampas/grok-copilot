@@ -1,6 +1,6 @@
 # Grok Copilot
 
-Grok Copilot is a Visual Studio Code extension that integrates with xAI's Grok API to provide AI-powered coding assistance. It offers inline code suggestions, a sidebar chat for interactive coding help, and seamless integration with your development workflow. Whether you're looking for code completions or need help debugging, Grok Copilot is here to assist.
+Grok Copilot is a **incomplete - wotk in progress** Visual Studio Code extension that integrates with xAI's Grok API to provide AI-powered coding assistance. It offers inline code suggestions, a sidebar chat for interactive coding help, and seamless integration with your development workflow. Whether you're looking for code completions or need help debugging, Grok Copilot is here to assist.
 
 ## Features
 
