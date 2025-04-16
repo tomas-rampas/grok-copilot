@@ -14,7 +14,7 @@ Grok Copilot is an **$${\color{red}incomplete\space -\space work\space in\space 
 
 > Tip: Check out short demo videos on our GitHub repository for a quick overview of Grok Copilot in action! 
 
-(I asked Grok to generate readme.md. It is hallucination. Sorry, no videos 😉 )
+(I asked Grok to generate readme.md. the link and Tip above is pure hallucination. Sorry, no videos 😉 )
 ## Requirements
 
 To use Grok Copilot, you need the following:
