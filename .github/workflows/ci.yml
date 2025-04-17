@@ -1,0 +1,85 @@
+# .github/workflows/ci.yml
+
+name: Node.js CI # Name of the workflow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: {} # Allows manual triggering
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+
+    strategy:
+      fail-fast: false # Ensure all Node versions are tested even if one fails
+      matrix:
+        # Specify Node.js versions to test against.
+        # Your package.json specifies ">=18", so testing current LTS versions is good.
+        node-version: [18.x, 20.x]
+        # Add '21.x' or other versions if needed
+
+    steps:
+      # 1. Checkout repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js environment based on the matrix version
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          # Cache npm dependencies for faster installs
+          cache: 'npm'
+
+      # 3. Install dependencies securely and deterministically
+      - name: Install dependencies
+        run: npm ci # Use 'ci' for clean installs based on package-lock.json
+
+      # 4. Run linter (ESLint)
+      #    Uses the script defined in your package.json
+      - name: Lint code
+        run: npm run lint
+
+      # 5. Check formatting (Prettier)
+      #    Checks if files match prettier rules without modifying them
+      - name: Check formatting
+        run: npx prettier --check .
+
+      # 6. Run TypeScript type checking
+      #    Ensures there are no type errors without generating JS output
+      - name: Check types
+        run: npx tsc --noEmit
+
+      # 7. Run tests (Vitest)
+      #    Uses the 'test' script from package.json
+      - name: Run tests
+        run: npm run test
+        # If you prefer to run with coverage in CI:
+        # run: npm run test:cov
+
+      # Optional: Upload coverage if using 'npm run test:cov'
+      # - name: Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }} # Optional: for private repos
+      #     # Vitest/c8 usually outputs to ./coverage
+      #     # directory: ./coverage/
+      #     fail_ci_if_error: true
+
+      # 8. Build project (esbuild)
+      #    Uses the 'build' script from package.json
+      - name: Build project
+        run: npm run build
+
+      # Optional: Add steps here to package or deploy the build output if needed
+      # For example, archiving the build artifact:
+      # - name: Archive production build
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: build-output-${{ matrix.node-version }}
+      #     path: |
+      #       out/ # Adjust path based on your build output
+      #       # Add other files/dirs if needed
