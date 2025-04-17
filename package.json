@@ -65,12 +65,12 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "eslint": "^9.24.0", 
     "@types/axios": "^0.14.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.25.2",
+    "eslint": "^9.24.0",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
