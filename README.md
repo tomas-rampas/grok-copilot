@@ -12,9 +12,10 @@ Grok Copilot is an **$${\color{red}incomplete\space -\space work\space in\space 
 ![Grok Copilot Chat](images/grok-chat.png)
 ![Inline Suggestions](images/inline-suggestions.png)
 
-> Tip: Check out short demo videos on our GitHub repository for a quick overview of Grok Copilot in action! 
+> Tip: Check out short demo videos on our GitHub repository for a quick overview of Grok Copilot in action!
 
 (I asked Grok to generate readme.md. the link and Tip above is pure hallucination. Sorry, no videos 😉 )
+
 ## Requirements
 
 To use Grok Copilot, you need the following:
@@ -26,10 +27,11 @@ To use Grok Copilot, you need the following:
 ### Installation
 
 1. Install the extension from the VS Code Marketplace (search for "Grok Copilot").
-( this is also hallucination 😉 )
+   ( this is also hallucination 😉 )
 2. Alternatively, clone the repository and build it locally:
    ```bash
    git clone https://github.com/your-repo/grok-copilot.git
    cd grok-copilot
    npm install
    npm run compile
+   ```

@@ -4,9 +4,9 @@ name: Node.js CI # Name of the workflow
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch: {} # Allows manual triggering
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           # Cache npm dependencies for faster installs
-          cache: 'npm'
+          cache: "npm"
 
       # 3. Install dependencies securely and deterministically
       - name: Install dependencies

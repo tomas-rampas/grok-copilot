@@ -1,6 +1,6 @@
 // File: src/extension.ts
-import * as vscode from 'vscode';
-import axios from 'axios';
+import * as vscode from "vscode";
+import axios from "axios";
 
 interface GrokResponse {
   choices: { text?: string; message?: { content?: string } }[];
@@ -11,236 +11,287 @@ let chatHistory: { role: string; content: string }[] = [];
 let outputChannel: vscode.OutputChannel;
 
 export function activate(context: vscode.ExtensionContext) {
-    // Create an output channel for logging
-    outputChannel = vscode.window.createOutputChannel('Grok Copilot');
-    context.subscriptions.push(outputChannel);
-    outputChannel.appendLine('Activating Grok Copilot extension...');
+  // Create an output channel for logging
+  outputChannel = vscode.window.createOutputChannel("Grok Copilot");
+  context.subscriptions.push(outputChannel);
+  outputChannel.appendLine("Activating Grok Copilot extension...");
 
-    const diagnosticCollection = vscode.languages.createDiagnosticCollection('grokCopilot');
-    context.subscriptions.push(diagnosticCollection);
+  const diagnosticCollection =
+    vscode.languages.createDiagnosticCollection("grokCopilot");
+  context.subscriptions.push(diagnosticCollection);
 
-    // Manual suggestion command
-    context.subscriptions.push(
-        vscode.commands.registerCommand('grok-copilot.suggest', async () => {
-            await suggestCode(diagnosticCollection);
-        })
-    );
+  // Manual suggestion command
+  context.subscriptions.push(
+    vscode.commands.registerCommand("grok-copilot.suggest", async () => {
+      await suggestCode(diagnosticCollection);
+    }),
+  );
 
-    // Chat command to focus the sidebar view
-    context.subscriptions.push(
-        vscode.commands.registerCommand('grok-copilot.chat', async () => {
-            outputChannel.appendLine('Executing grok-copilot.chat command to focus sidebar view');
-            try {
-                await vscode.commands.executeCommand('workbench.view.extension.grokCopilot');
-                await vscode.commands.executeCommand('grokChat.focus');
-                outputChannel.appendLine('Successfully focused Grok Chat sidebar view');
-            } catch (error) {
-                outputChannel.appendLine(`Error focusing Grok Chat sidebar view: ${error}`);
-                vscode.window.showErrorMessage('Failed to open Grok Chat in sidebar. Check Output for details.');
-            }
-        })
-    );
+  // Chat command to focus the sidebar view
+  context.subscriptions.push(
+    vscode.commands.registerCommand("grok-copilot.chat", async () => {
+      outputChannel.appendLine(
+        "Executing grok-copilot.chat command to focus sidebar view",
+      );
+      try {
+        await vscode.commands.executeCommand(
+          "workbench.view.extension.grokCopilot",
+        );
+        await vscode.commands.executeCommand("grokChat.focus");
+        outputChannel.appendLine("Successfully focused Grok Chat sidebar view");
+      } catch (error) {
+        outputChannel.appendLine(
+          `Error focusing Grok Chat sidebar view: ${error}`,
+        );
+        vscode.window.showErrorMessage(
+          "Failed to open Grok Chat in sidebar. Check Output for details.",
+        );
+      }
+    }),
+  );
 
-    // Register the WebviewViewProvider for the sidebar
-    const chatProvider = new GrokChatViewProvider(context.extensionUri);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider('grokChat', chatProvider)
-    );
-    outputChannel.appendLine('Registered GrokChatViewProvider for sidebar view with ID grokChat');
+  // Register the WebviewViewProvider for the sidebar
+  const chatProvider = new GrokChatViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("grokChat", chatProvider),
+  );
+  outputChannel.appendLine(
+    "Registered GrokChatViewProvider for sidebar view with ID grokChat",
+  );
 
-    // Inline completions provider
-    context.subscriptions.push(
-        vscode.languages.registerInlineCompletionItemProvider(
-            { scheme: 'file', language: '*' }, // All files
-            {
-                async provideInlineCompletionItems(document, position) {
-                    const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
-                    try {
-                        const apiKey = vscode.workspace.getConfiguration('grok-copilot').get('apiKey') as string;
-                        if (!apiKey) return [];
+  // Inline completions provider
+  context.subscriptions.push(
+    vscode.languages.registerInlineCompletionItemProvider(
+      { scheme: "file", language: "*" }, // All files
+      {
+        async provideInlineCompletionItems(document, position) {
+          const prefix = document.getText(
+            new vscode.Range(new vscode.Position(0, 0), position),
+          );
+          try {
+            const apiKey = vscode.workspace
+              .getConfiguration("grok-copilot")
+              .get("apiKey") as string;
+            if (!apiKey) return [];
 
-                        const response = await axios.post<GrokResponse>(
-                            'https://api.x.ai/v1/chat/completions',
-                            {
-                                messages: [{ role: 'user', content: `Complete the following code:\n${prefix}` }],
-                                model: 'grok-2',
-                                max_tokens: 100
-                            },
-                            { headers: { 'Authorization': `Bearer ${apiKey}` } }
-                        );
+            const response = await axios.post<GrokResponse>(
+              "https://api.x.ai/v1/chat/completions",
+              {
+                messages: [
+                  {
+                    role: "user",
+                    content: `Complete the following code:\n${prefix}`,
+                  },
+                ],
+                model: "grok-2",
+                max_tokens: 100,
+              },
+              { headers: { Authorization: `Bearer ${apiKey}` } },
+            );
 
-                        const suggestion = response.data.choices[0]?.message?.content?.trim();
-                        if (!suggestion) return [];
+            const suggestion =
+              response.data.choices[0]?.message?.content?.trim();
+            if (!suggestion) return [];
 
-                        return [
-                            {
-                                insertText: suggestion,
-                                range: new vscode.Range(position, position)
-                            }
-                        ];
-                    } catch (error) {
-                        outputChannel.appendLine(`Inline completion error: ${error}`);
-                        return [];
-                    }
-                }
-            }
-        )
-    );
+            return [
+              {
+                insertText: suggestion,
+                range: new vscode.Range(position, position),
+              },
+            ];
+          } catch (error) {
+            outputChannel.appendLine(`Inline completion error: ${error}`);
+            return [];
+          }
+        },
+      },
+    ),
+  );
 
-    // Suggestions on typing (optional fallback)
-    context.subscriptions.push(
-        vscode.workspace.onDidChangeTextDocument(async () => {
-            await suggestCode(diagnosticCollection, true);
-        })
-    );
+  // Suggestions on typing (optional fallback)
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(async () => {
+      await suggestCode(diagnosticCollection, true);
+    }),
+  );
 }
 
-async function suggestCode(diagnosticCollection: vscode.DiagnosticCollection, inline: boolean = false) {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        if (!inline) {
-            vscode.window.showInformationMessage('No active editor.');
-        }
-        return;
+async function suggestCode(
+  diagnosticCollection: vscode.DiagnosticCollection,
+  inline: boolean = false,
+) {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    if (!inline) {
+      vscode.window.showInformationMessage("No active editor.");
+    }
+    return;
+  }
+
+  const document = editor.document;
+  const position = editor.selection.active;
+  const prefix = document.getText(
+    new vscode.Range(new vscode.Position(0, 0), position),
+  );
+
+  try {
+    const apiKey = vscode.workspace
+      .getConfiguration("grok-copilot")
+      .get("apiKey") as string;
+    if (!apiKey) {
+      vscode.window.showErrorMessage(
+        "Please set your xAI API key in settings.",
+      );
+      return;
     }
 
-    const document = editor.document;
-    const position = editor.selection.active;
-    const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+    const response = await axios.post<GrokResponse>(
+      "https://api.x.ai/v1/chat/completions",
+      {
+        messages: [
+          { role: "user", content: `Complete the following code:\n${prefix}` },
+        ],
+        model: "grok-2",
+        max_tokens: 100,
+      },
+      { headers: { Authorization: `Bearer ${apiKey}` } },
+    );
 
-    try {
-        const apiKey = vscode.workspace.getConfiguration('grok-copilot').get('apiKey') as string;
-        if (!apiKey) {
-            vscode.window.showErrorMessage('Please set your xAI API key in settings.');
-            return;
-        }
-
-        const response = await axios.post<GrokResponse>(
-            'https://api.x.ai/v1/chat/completions',
-            {
-                messages: [{ role: 'user', content: `Complete the following code:\n${prefix}` }],
-                model: 'grok-2',
-                max_tokens: 100
-            },
-            { headers: { 'Authorization': `Bearer ${apiKey}` } }
-        );
-
-        const suggestion = response.data.choices[0]?.message?.content?.trim() || '';
-        if (!suggestion) {
-            if (!inline) {
-                vscode.window.showInformationMessage('No suggestion from Grok.');
-            }
-            return;
-        }
-
-        if (inline) {
-            const decoration = vscode.window.createTextEditorDecorationType({
-                after: { contentText: suggestion, color: '#999999' }
-            });
-            editor.setDecorations(decoration, [new vscode.Range(position, position)]);
-            setTimeout(() => decoration.dispose(), 5000);
-        } else {
-            editor.edit(editBuilder => {
-                editBuilder.insert(position, suggestion);
-            });
-        }
-
-        diagnosticCollection.clear();
-    } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        diagnosticCollection.set(document.uri, [
-            new vscode.Diagnostic(
-                new vscode.Range(position, position),
-                `Grok API error: ${message}`,
-                vscode.DiagnosticSeverity.Error
-            )
-        ]);
+    const suggestion = response.data.choices[0]?.message?.content?.trim() || "";
+    if (!suggestion) {
+      if (!inline) {
+        vscode.window.showInformationMessage("No suggestion from Grok.");
+      }
+      return;
     }
+
+    if (inline) {
+      const decoration = vscode.window.createTextEditorDecorationType({
+        after: { contentText: suggestion, color: "#999999" },
+      });
+      editor.setDecorations(decoration, [new vscode.Range(position, position)]);
+      setTimeout(() => decoration.dispose(), 5000);
+    } else {
+      editor.edit((editBuilder) => {
+        editBuilder.insert(position, suggestion);
+      });
+    }
+
+    diagnosticCollection.clear();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    diagnosticCollection.set(document.uri, [
+      new vscode.Diagnostic(
+        new vscode.Range(position, position),
+        `Grok API error: ${message}`,
+        vscode.DiagnosticSeverity.Error,
+      ),
+    ]);
+  }
 }
 
 // WebviewViewProvider for the sidebar chat
 class GrokChatViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewType = 'grokChat';
-    private _view?: vscode.WebviewView;
-    private _extensionUri: vscode.Uri;
+  public static readonly viewType = "grokChat";
+  private _view?: vscode.WebviewView;
+  private _extensionUri: vscode.Uri;
 
-    constructor(extensionUri: vscode.Uri) {
-        this._extensionUri = extensionUri;
-    }
+  constructor(extensionUri: vscode.Uri) {
+    this._extensionUri = extensionUri;
+  }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken
-    ) {
-        this._view = webviewView;
-        outputChannel.appendLine('Resolving Grok Chat WebviewView in sidebar with ID grokChat');
+  public resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken,
+  ) {
+    this._view = webviewView;
+    outputChannel.appendLine(
+      "Resolving Grok Chat WebviewView in sidebar with ID grokChat",
+    );
 
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [this._extensionUri]
-        };
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri],
+    };
 
-        // Handle messages from the webview
-        webviewView.webview.onDidReceiveMessage(async (message) => {
-            outputChannel.appendLine(`Received message from Webview: ${message.command}`);
-            if (message.command === 'sendMessage') {
-                const userMessage = message.text;
-                chatHistory.push({ role: 'user', content: userMessage });
-                this.updateWebview(); // Show user message immediately
+    // Handle messages from the webview
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      outputChannel.appendLine(
+        `Received message from Webview: ${message.command}`,
+      );
+      if (message.command === "sendMessage") {
+        const userMessage = message.text;
+        chatHistory.push({ role: "user", content: userMessage });
+        this.updateWebview(); // Show user message immediately
 
-                // Get code context from active editor
-                const editor = vscode.window.activeTextEditor;
-                const codeContext = editor ? editor.document.getText() : '';
+        // Get code context from active editor
+        const editor = vscode.window.activeTextEditor;
+        const codeContext = editor ? editor.document.getText() : "";
 
-                try {
-                    const apiKey = vscode.workspace.getConfiguration('grok-copilot').get('apiKey') as string;
-                    if (!apiKey) {
-                        chatHistory.push({ role: 'assistant', content: 'Error: Please set your xAI API key in settings.' });
-                        this.updateWebview();
-                        return;
-                    }
-
-                    // Prepare messages with system context, code context, and chat history
-                    const messages = [
-                        { role: 'system', content: 'You are a helpful coding assistant. Answer concisely and accurately.' },
-                        { role: 'user', content: `Code context:\n${codeContext}` },
-                        ...chatHistory
-                    ];
-
-                    const response = await axios.post<GrokResponse>(
-                        'https://api.x.ai/v1/chat/completions',
-                        {
-                            messages: messages,
-                            model: 'grok-2',
-                            max_tokens: 500
-                        },
-                        { headers: { 'Authorization': `Bearer ${apiKey}` } }
-                    );
-
-                    const answer = response.data.choices[0]?.message?.content || 'No response from Grok.';
-                    chatHistory.push({ role: 'assistant', content: answer });
-                    this.updateWebview();
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    chatHistory.push({ role: 'assistant', content: `Error: ${errorMessage}` });
-                    this.updateWebview();
-                }
-            }
-        });
-
-        // Set initial HTML content
-        outputChannel.appendLine('Setting initial Webview content for Grok Chat');
-        this.updateWebview();
-    }
-
-    private updateWebview() {
-        if (!this._view) {
-            outputChannel.appendLine('No Webview view available to update');
+        try {
+          const apiKey = vscode.workspace
+            .getConfiguration("grok-copilot")
+            .get("apiKey") as string;
+          if (!apiKey) {
+            chatHistory.push({
+              role: "assistant",
+              content: "Error: Please set your xAI API key in settings.",
+            });
+            this.updateWebview();
             return;
-        }
+          }
 
-        const htmlContent = `
+          // Prepare messages with system context, code context, and chat history
+          const messages = [
+            {
+              role: "system",
+              content:
+                "You are a helpful coding assistant. Answer concisely and accurately.",
+            },
+            { role: "user", content: `Code context:\n${codeContext}` },
+            ...chatHistory,
+          ];
+
+          const response = await axios.post<GrokResponse>(
+            "https://api.x.ai/v1/chat/completions",
+            {
+              messages: messages,
+              model: "grok-2",
+              max_tokens: 500,
+            },
+            { headers: { Authorization: `Bearer ${apiKey}` } },
+          );
+
+          const answer =
+            response.data.choices[0]?.message?.content ||
+            "No response from Grok.";
+          chatHistory.push({ role: "assistant", content: answer });
+          this.updateWebview();
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          chatHistory.push({
+            role: "assistant",
+            content: `Error: ${errorMessage}`,
+          });
+          this.updateWebview();
+        }
+      }
+    });
+
+    // Set initial HTML content
+    outputChannel.appendLine("Setting initial Webview content for Grok Chat");
+    this.updateWebview();
+  }
+
+  private updateWebview() {
+    if (!this._view) {
+      outputChannel.appendLine("No Webview view available to update");
+      return;
+    }
+
+    const htmlContent = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -326,11 +377,19 @@ class GrokChatViewProvider implements vscode.WebviewViewProvider {
             <body>
                 <div id="chat-container">
                     <div id="chat-messages">
-                        ${chatHistory.length > 0 ? chatHistory.map(msg => `
+                        ${
+                          chatHistory.length > 0
+                            ? chatHistory
+                                .map(
+                                  (msg) => `
                             <div class="message ${msg.role}">
-                                <strong>${msg.role === 'user' ? 'You' : 'Grok'}:</strong> ${msg.content.replace(/\n/g, '<br>')}
+                                <strong>${msg.role === "user" ? "You" : "Grok"}:</strong> ${msg.content.replace(/\n/g, "<br>")}
                             </div>
-                        `).join('') : '<div id="loading">Loading Grok Chat... Welcome to Grok Copilot!</div>'}
+                        `,
+                                )
+                                .join("")
+                            : '<div id="loading">Loading Grok Chat... Welcome to Grok Copilot!</div>'
+                        }
                     </div>
                     <div id="chat-input">
                         <textarea id="message-input" rows="3" placeholder="Type your message..."></textarea>
@@ -366,13 +425,13 @@ class GrokChatViewProvider implements vscode.WebviewViewProvider {
             </html>
         `;
 
-        this._view.webview.html = htmlContent;
-        outputChannel.appendLine('Updated Webview HTML content for Grok Chat');
-    }
+    this._view.webview.html = htmlContent;
+    outputChannel.appendLine("Updated Webview HTML content for Grok Chat");
+  }
 }
 
 export function deactivate() {
-    if (outputChannel) {
-        outputChannel.dispose();
-    }
+  if (outputChannel) {
+    outputChannel.dispose();
+  }
 }
