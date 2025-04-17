@@ -65,6 +65,7 @@
     "lint": "eslint ."
   },
   "devDependencies": {
+    "eslint": "^9.24.0", 
     "@types/axios": "^0.14.4",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20",
