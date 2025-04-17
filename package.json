@@ -62,7 +62,7 @@
     "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
     "test": "mocha --require ts-node/register ./test/extension.test.ts",
-    "lint": "eslint .",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@types/axios": "^0.14.4",
