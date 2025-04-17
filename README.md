@@ -9,13 +9,6 @@ Grok Copilot is an **$${\color{red}incomplete\space -\space work\space in\space 
 - **Context-Aware Assistance**: The chat includes your current file's content as context for more relevant and accurate responses.
 - **Theme Integration**: The chat interface adapts to your VS Code theme for a consistent look and feel.
 
-![Grok Copilot Chat](images/grok-chat.png)
-![Inline Suggestions](images/inline-suggestions.png)
-
-> Tip: Check out short demo videos on our GitHub repository for a quick overview of Grok Copilot in action!
-
-(I asked Grok to generate readme.md. the link and Tip above is pure hallucination. Sorry, no videos 😉 )
-
 ## Requirements
 
 To use Grok Copilot, you need the following:
@@ -27,7 +20,6 @@ To use Grok Copilot, you need the following:
 ### Installation
 
 1. Install the extension from the VS Code Marketplace (search for "Grok Copilot").
-   ( this is also hallucination 😉 )
 2. Alternatively, clone the repository and build it locally:
    ```bash
    git clone https://github.com/your-repo/grok-copilot.git
